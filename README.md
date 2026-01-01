@@ -64,4 +64,6 @@ docker compose up -d
 ```
 
 ## Screenshots
-![Influxdb](screenshots/Screenshot2026-01-01193715.png)
+![Influxdb](influxdb.png)
+![Web Dashboard](webdashboard.png)
+![Grafana](grafana.png)
