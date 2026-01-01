@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Home Dashboard IoT</title>
+
+<style>
+:root {
+    --primary: #4f46e5;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --bg: #0f172a;
+    --card-bg: rgba(255,255,255,0.12);
+    --text: #e5e7eb;
+    --muted: #94a3b8;
+    --glass: blur(14px);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 24px;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at top, #1e293b, #020617);
+    color: var(--text);
+}
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.header p {
+    margin-top: 6px;
+    color: var(--muted);
+}
+
+/* GRID */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.full-width {
+    grid-column: span 2;
+}
+
+/* CARD */
+.card {
+    background: var(--card-bg);
+    backdrop-filter: var(--glass);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+}
+
+h2 {
+    margin: 0 0 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* TOGGLE */
+.toggle-wrapper {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.toggle {
+    position: relative;
+    width: 90px;
+    height: 44px;
+}
+
+.toggle input {
+    display: none;
+}
+
+.slider {
+    position: absolute;
+    inset: 0;
+    background: #334155;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: 0.4s;
+}
+
+.slider::before {
+    content: "";
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    left: 4px;
+    top: 4px;
+    background: white;
+    border-radius: 50%;
+    transition: 0.4s;
+}
+
+input:checked + .slider {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+input:checked + .slider::before {
+    transform: translateX(46px);
+}
+
+/* STATUS */
+.status-text {
+    text-align: center;
+    font-weight: 500;
+    margin-top: 10px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge.online {
+    background: rgba(34,197,94,0.15);
+    color: var(--success);
+}
+
+/* IFRAME */
+.iframe-container {
+    width: 100%;
+    height: 260px;
+    border: none;
+    border-radius: 12px;
+    background: #020617;
+}
+
+.iframe-status {
+    height: 160px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .full-width {
+        grid-column: span 1;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🏠 Smart Home Dashboard</h1>
+        <p>Monitoring & Control ESP32 Realtime</p>
+    </div>
+
+    <div class="dashboard-grid">
+
+        <!-- CONTROL -->
+        <div class="card full-width">
+            <h2>🎮 Kontrol Lampu</h2>
+
+            <div class="toggle-wrapper">
+                <label class="toggle">
+                    <input type="checkbox" onchange="toggleLampu(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="status-text" id="status-text">
+                <span class="badge online">Siap menerima perintah</span>
+            </div>
+        </div>
+
+        <!-- STATUS -->
+        <div class="card full-width">
+            <h2>📡 Status ESP32</h2>
+            <iframe class="iframe-container iframe-status"
+                src="http://localhost:3001/d-solo/adqgrft/temp?orgId=1&refresh=5s&panelId=3">
+            </iframe>
+        </div>
+
+        <!-- SUHU -->
+        <div class="card">
+            <h2>🌡️ Suhu (°C)</h2>
+            <iframe class="iframe-container"
+                src="http://localhost:3001/d-solo/adqgrft/temp?orgId=1&refresh=5s&panelId=1">
+            </iframe>
+        </div>
+
+        <!-- HUMIDITY -->
+        <div class="card">
+            <h2>💧 Kelembapan (%)</h2>
+            <iframe class="iframe-container"
+                src="http://localhost:3001/d-solo/adqgrft/temp?orgId=1&refresh=5s&panelId=2">
+            </iframe>
+        </div>
+
+    </div>
+</div>
+
+<script>
+async function toggleLampu(isOn) {
+    const statusText = document.getElementById('status-text');
+    const aksi = isOn ? 'ON' : 'OFF';
+
+    statusText.innerHTML = "⏳ Mengirim perintah...";
+
+    try {
+        const res = await fetch('http://localhost:3000/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: aksi })
+        });
+
+        const data = await res.json();
+
+        statusText.innerHTML = `
+            <span class="badge online">
+                Lampu ${aksi === 'ON' ? 'MENYALA' : 'MATI'}
+            </span>`;
+    } catch (e) {
+        statusText.innerHTML = `
+            <span class="badge" style="background:rgba(239,68,68,0.15);color:#ef4444">
+                Backend Tidak Terhubung
+            </span>`;
+    }
+}
+</script>
+
+</body>
+</html>
